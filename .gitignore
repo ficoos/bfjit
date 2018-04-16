@@ -1,2 +1,8 @@
 /bfjit
 /bfc
+*.o
+*.bc
+aux/bench
+aux/fib
+aux/hello
+aux/squares
