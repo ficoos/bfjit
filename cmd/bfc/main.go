@@ -20,6 +20,8 @@ func main() {
 		os.Exit(-1)
 	}
 
+	inputFile := flag.Arg(0)
+
 	mod := llvm.NewModule("bf")
 
 	putcharFuncType := llvm.FunctionType(llvm.VoidType(), []llvm.Type{llvm.Int8Type()}, false)
@@ -29,7 +31,7 @@ func main() {
 	memsetFuncType := llvm.FunctionType(llvm.PointerType(llvm.Int64Type(), 0), []llvm.Type{llvm.PointerType(llvm.Int8Type(), 0), llvm.Int8Type(), llvm.Int64Type()}, false)
 	llvm.AddFunction(mod, "memset", memsetFuncType)
 
-	if res, err := ioutil.ReadFile(flag.Arg(0)); err != nil {
+	if res, err := ioutil.ReadFile(inputFile); err != nil {
 		fmt.Printf("Could not read input file: %s", err)
 		os.Exit(-1)
 	} else if err := bf.Compile(string(res), mod); err != nil {
@@ -37,6 +39,10 @@ func main() {
 		os.Exit(-1)
 	}
 
+	if *outputFile == "" {
+		ext := filepath.Ext(inputFile)
+		*outputFile = inputFile[:len(inputFile)-len(ext)] + ".bc"
+	}
 	f, err := os.Create(*outputFile)
 	if err != nil {
 		fmt.Printf("Cant open output file: %s", err)
