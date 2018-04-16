@@ -11,6 +11,7 @@ import (
 )
 
 var outputFile = flag.String("o", "", "Output file")
+var optLevel = flag.Uint("O", 0, "Optimization level")
 
 func main() {
 	flag.Parse()
@@ -22,7 +23,7 @@ func main() {
 
 	inputFile := flag.Arg(0)
 
-	mod := llvm.NewModule("bf")
+	mod := llvm.NewModule(inputFile)
 
 	putcharFuncType := llvm.FunctionType(llvm.VoidType(), []llvm.Type{llvm.Int8Type()}, false)
 	llvm.AddFunction(mod, "bf_putchar", putcharFuncType)
@@ -49,6 +50,13 @@ func main() {
 		os.Exit(-1)
 	}
 	defer f.Close()
+	pm := llvm.NewPassManager()
+	defer pm.Dispose()
+	pmb := llvm.NewPassManagerBuilder()
+	defer pmb.Dispose()
+	pmb.SetOptLevel(int(*optLevel))
+	pmb.Populate(pm)
+	pm.Run(mod)
 	if err := llvm.WriteBitcodeToFile(mod, f); err != nil {
 		fmt.Printf("Failed to write bitcode to file: %s", err)
 		os.Exit(-1)

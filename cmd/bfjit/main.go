@@ -30,15 +30,25 @@ func main() {
 	opts := llvm.MCJITCompilerOptions{}
 	opts.SetMCJITCodeModel(llvm.CodeModelJITDefault)
 	opts.SetMCJITOptimizationLevel(3)
+
+	pm := llvm.NewPassManager()
+	defer pm.Dispose()
+	pmb := llvm.NewPassManagerBuilder()
+	defer pmb.Dispose()
+	pmb.SetOptLevel(3)
+	pmb.Populate(pm)
+
 	engine, err := llvm.NewMCJITCompiler(mod, opts)
 	if err != nil {
 		panic(err)
 	}
 
 	putcharFuncType := llvm.FunctionType(llvm.VoidType(), []llvm.Type{llvm.Int8Type()}, false)
-	llvm.AddFunction(mod, "bf_putchar", putcharFuncType)
+	putchar := llvm.AddFunction(mod, "bf_putchar", putcharFuncType)
+	putchar.SetLinkage(llvm.ExternalLinkage)
 	getcharFuncType := llvm.FunctionType(llvm.Int8Type(), []llvm.Type{}, false)
-	llvm.AddFunction(mod, "bf_getchar", getcharFuncType)
+	getchar := llvm.AddFunction(mod, "bf_getchar", getcharFuncType)
+	getchar.SetLinkage(llvm.ExternalLinkage)
 	memsetFuncType := llvm.FunctionType(llvm.PointerType(llvm.Int64Type(), 0), []llvm.Type{llvm.PointerType(llvm.Int8Type(), 0), llvm.Int8Type(), llvm.Int64Type()}, false)
 	llvm.AddFunction(mod, "memset", memsetFuncType)
 
@@ -49,6 +59,8 @@ func main() {
 		fmt.Printf("Could not compile: %s", err)
 		os.Exit(-1)
 	}
+
+	pm.Run(mod)
 
 	engine.RunStaticConstructors()
 	engine.RunFunction(mod.NamedFunction("main"), []llvm.GenericValue{})
