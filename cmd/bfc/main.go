@@ -7,9 +7,10 @@ import (
 	"io/ioutil"
 	"llvm.org/llvm/bindings/go/llvm"
 	"os"
+	"path/filepath"
 )
 
-var outputFile = flag.String("o", "out.ll", "Output file")
+var outputFile = flag.String("o", "", "Output file")
 
 func main() {
 	flag.Parse()

@@ -24,8 +24,8 @@ func init() {
 func Compile(code string, mod llvm.Module) error {
 	itemType := llvm.Int8Type()
 	one := llvm.ConstInt(itemType, 1, false)
+	minusOne := llvm.ConstNeg(one)
 	zero := llvm.ConstInt(itemType, 0, false)
-	uintptr_t := llvm.Int64Type()
 	putchar := mod.NamedFunction("bf_putchar")
 	getchar := mod.NamedFunction("bf_getchar")
 	memset := mod.NamedFunction("memset")
@@ -41,7 +41,6 @@ func Compile(code string, mod llvm.Module) error {
 	ptrType := llvm.PointerType(itemType, tape.Type().PointerAddressSpace())
 	ptr := builder.CreateAlloca(ptrType, "ptr")
 	builder.CreateStore(tape, ptr)
-	onePtr := llvm.ConstInt(llvm.Int64Type(), 1, false)
 
 	loopCounter := 0
 
@@ -53,13 +52,13 @@ func Compile(code string, mod llvm.Module) error {
 		i += l
 		switch c {
 		case '>':
-			a := builder.CreateCast(builder.CreateLoad(ptr, ""), llvm.PtrToInt, uintptr_t, "")
-			apb := builder.CreateAdd(a, onePtr, "")
-			builder.CreateStore(builder.CreateCast(apb, llvm.IntToPtr, ptrType, ""), ptr)
+			p := builder.CreateLoad(ptr, "")
+			np := builder.CreateGEP(p, []llvm.Value{one}, "")
+			builder.CreateStore(np, ptr)
 		case '<':
-			a := builder.CreateCast(builder.CreateLoad(ptr, ""), llvm.PtrToInt, uintptr_t, "")
-			apb := builder.CreateSub(a, onePtr, "")
-			builder.CreateStore(builder.CreateCast(apb, llvm.IntToPtr, ptrType, ""), ptr)
+			p := builder.CreateLoad(ptr, "")
+			np := builder.CreateGEP(p, []llvm.Value{minusOne}, "")
+			builder.CreateStore(np, ptr)
 		case '+':
 			p := builder.CreateLoad(ptr, "")
 			v := builder.CreateLoad(p, "tmp")
